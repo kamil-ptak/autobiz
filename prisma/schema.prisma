@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String           @id
+  email        String           @unique
+  name         String?
+  createdAt    DateTime         @default(now())
+  transactions CarTransaction[]
+  expenses     Expense[]
+  invoices     Invoice[]
+}
+
+model CarTransaction {
+  id         Int       @id @default(autoincrement())
+  userId     String
+  brand      String
+  model      String
+  vin        String?
+  buyPrice   Float
+  sellPrice  Float?
+  extraCosts Float?    @default(0)
+  buyDate    DateTime
+  sellDate   DateTime?
+  status     String    // "available" | "sold"
+  profit     Float?
+  vatMargin  Float?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices   Invoice[]
+  expenses   Expense[]
+
+  @@index([userId])
+}
+
+model Expense {
+  id          Int             @id @default(autoincrement())
+  userId      String
+  carId       Int?
+  category    String
+  amount      Float
+  description String?
+  date        DateTime        @default(now())
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car         CarTransaction? @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([carId])
+}
+
+model Invoice {
+  id          Int            @id @default(autoincrement())
+  userId      String
+  carId       Int
+  buyerName   String
+  buyerNIP    String?
+  number      String         @unique
+  totalAmount Float
+  vatMargin   Float
+  issueDate   DateTime       @default(now())
+  pdfUrl      String?
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car         CarTransaction @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([carId])
+}
